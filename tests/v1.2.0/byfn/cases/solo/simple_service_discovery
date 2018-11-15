@@ -1,0 +1,8 @@
+## control parameter for application
+_USE_SERVICE_DISCOVERY=true
+_PEERS="\"peer0.org1.example.com\""
+
+## control parameter for Fabric network
+_ENDORSEMENT_POLICY=
+
+. libs/test_simple.sh

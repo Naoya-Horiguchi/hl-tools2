@@ -1,0 +1,17 @@
+# sample chaincode marbles02 still doesn't support Private Data Collection, which should
+# be used in marbles02_private.
+
+## control parameter for application
+_USE_SERVICE_DISCOVERY=true
+
+## control parameter for Fabric network
+_ENDORSEMENT_POLICY=
+
+# using default endorsement policy, so no need to instantiate chaincodes in
+# each run. you can reuse already installed/instantiated ones.
+_CC_NAME=marblecc
+_CC_VERSION=v1
+_CC_SRC_PATH=examples/chaincode/go/marbles02
+
+. libs/test_common.sh
+. libs/test_marbles02.sh

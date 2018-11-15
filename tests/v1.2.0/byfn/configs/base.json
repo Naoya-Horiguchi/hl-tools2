@@ -1,0 +1,26 @@
+{
+	"host": "localhost",
+	"port": "4000",
+	"jwt_expiretime": "36000",
+	"channelName": "mychannel",
+	"CC_SRC_PATH": "artifacts",
+	"eventWaitTime": "4000",
+	"admins":[
+		{
+			"username": "admin",
+			"secret": "adminpw"
+		}
+	],
+	"run_dir": "run",
+	"run_dir_outside_docker": "/var/run/app",
+	"bc_data_dir": "run/data",
+	"bc_data_dir_outside_docker": "/var/run/app/data",
+	"credential_store_dir": "run/fabric-client-kv",
+	"credential_store_dir_outside_docker": "/var/run/app/fabric-client-kv",
+	"network_config": "configs/network-config.yaml",
+	"organization_config": {
+		"org1": "configs/org1.yaml",
+		"org2": "configs/org2.yaml"
+	},
+	"sdk-version": "v1.2"
+}

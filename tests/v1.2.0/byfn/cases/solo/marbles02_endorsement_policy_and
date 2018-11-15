@@ -1,0 +1,15 @@
+## control parameter for application
+_USE_SERVICE_DISCOVERY=true
+
+## control parameter for Fabric network
+_ENDORSEMENT_POLICY=TWO_OF_TWO_ORG_MEMBER
+
+# need different name in each run to test instantiate chaincode with some
+# endorsement policy.
+TSTAMP=$(date +%y%m%d%H%M%S)
+_CC_NAME=marblecc$TSTAMP
+_CC_VERSION=v$TSTAMP
+_CC_SRC_PATH=examples/chaincode/go/marbles02
+
+. libs/test_common.sh
+. libs/test_marbles02.sh

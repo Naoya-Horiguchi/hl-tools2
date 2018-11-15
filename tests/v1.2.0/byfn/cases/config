@@ -1,0 +1,46 @@
+LOGLEVEL=DEBUG # INFO # DEBUG
+CONFIG_JSON=configs/base.json
+
+FABRIC_NETWORK_NAME=byfn
+FABRIC_NETWORK_DIR=$PWD/fabric-samples/first-network
+
+DOCKER_NETWORK=net_byfn
+CRYPTO_CONFIG_DIR=$FABRIC_NETWORK_DIR/crypto-config
+ARTIFACTS_DIR=$PWD/examples
+
+export FABRIC_DIR=${GOPATH}/src/github.com/hyperledger/fabric
+export FABRIC_CA_DIR=${GOPATH}/src/github.com/hyperledger/fabric-ca
+export FABRIC_SDK_NODE_DIR=${GOPATH}/src/github.com/hyperledger/fabric-sdk-node
+
+# use official images
+FABRIC_BUILD=false
+
+setup_private_keys() {
+    echo "updating network-config.yaml"
+
+	local ORG1_PRIVKEY="$(cd $FABRIC_NETWORK_DIR/ ; find crypto-config -type f | grep org1.example.com/users/Admin@org1.example.com/msp/keystore)"
+	local ORG2_PRIVKEY="$(cd $FABRIC_NETWORK_DIR/ ; find crypto-config -type f | grep org2.example.com/users/Admin@org2.example.com/msp/keystore)"
+
+	sed \
+		-e "s|__org1_adminPrivateKey_path|$ORG1_PRIVKEY|" \
+		-e "s|__org2_adminPrivateKey_path|$ORG2_PRIVKEY|" \
+		configs/network-config-template.yaml > configs/network-config.yaml
+}
+
+start_fabric_network() {
+	pushd $FABRIC_NETWORK_DIR
+	./byfn.sh down
+	./byfn.sh generate -c mychannel 
+	popd
+	setup_private_keys
+	pushd $FABRIC_NETWORK_DIR
+	[ "$HLF_MODE" == couchdb ] && DBOPTION="-s couchdb"
+	./byfn.sh up -f docker-compose-e2e.yaml -c mychannel $DBOPTION
+	popd
+}
+
+stop_fabric_network() {
+	pushd $FABRIC_NETWORK_DIR
+	./byfn.sh down
+	popd
+}
