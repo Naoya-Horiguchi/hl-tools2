@@ -1,8 +1,10 @@
+# Invoke() should fail because of endorsement policy violation.
+
 start_application() {
 	local count=120
 
 	pushd $FABRIC_NETWORK_DIR
-	PORT=4000 node app | tee $TMPD/runApp.log &
+	SEND_ONLY_PEER=peer0.org1.example.com ENDORSEMENT_POLICY=TWO_OF_TWO_ORG_MEMBER PORT=4000 node app | tee $TMPD/runApp.log &
 	while ! grep '***** SERVER STARTED ******' $TMPD/runApp.log ; do
 		sleep 1
 		count=$[count - 1]

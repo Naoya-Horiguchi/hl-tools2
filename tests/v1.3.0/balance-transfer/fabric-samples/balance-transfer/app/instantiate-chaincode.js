@@ -18,6 +18,27 @@ var util = require('util');
 var helper = require('./helper.js');
 var logger = helper.getLogger('instantiate-chaincode');
 
+var TWO_ORG_MEMBERS_AND_ADMINS = [
+        {role: {name: 'member', mspId: 'Org1MSP'}},
+        {role: {name: 'member', mspId: 'Org2MSP'}},
+        {role: {name: 'admin',  mspId: 'Org1MSP'}},
+        {role: {name: 'admin',  mspId: 'Org2MSP'}},
+];
+
+var ONE_OF_TWO_ORG_MEMBER = {
+    identities: TWO_ORG_MEMBERS_AND_ADMINS,
+    policy: {
+        '1-of': [{ 'signed-by': 0 }, { 'signed-by': 1 }]
+    }
+};
+
+var TWO_OF_TWO_ORG_MEMBER = {
+    identities: TWO_ORG_MEMBERS_AND_ADMINS,
+    policy: {
+        '2-of': [{ 'signed-by': 0 }, { 'signed-by': 1 }]
+    }
+};
+
 var instantiateChaincode = async function(peers, channelName, chaincodeName, chaincodeVersion, functionName, chaincodeType, args, username, org_name) {
 	logger.debug('\n\n============ Instantiate chaincode on channel ' + channelName +
 		' ============\n');
@@ -41,6 +62,14 @@ var instantiateChaincode = async function(peers, channelName, chaincodeName, cha
 		var deployId = tx_id.getTransactionID();
 
 		// send proposal to endorser
+		var endpolicy = TWO_OF_TWO_ORG_MEMBER;
+		if (process.env.ENDORSEMENT_POLICY == 'ONE_OF_TWO_ORG_MEMBER') {
+			endpolicy = ONE_OF_TWO_ORG_MEMBER;
+		} else if (process.env.ENDORSEMENT_POLICY == 'TWO_OF_TWO_ORG_MEMBER') {
+			endpolicy = TWO_OF_TWO_ORG_MEMBER;
+		}
+		logger.debug('===> endpolicy: ' + process.env.ENDORSEMENT_POLICY);
+		logger.debug('===> targets: ' + peers);
 		var request = {
 			targets : peers,
 			chaincodeId: chaincodeName,
@@ -51,15 +80,7 @@ var instantiateChaincode = async function(peers, channelName, chaincodeName, cha
 
 			// Use this to demonstrate the following policy:
 			// The policy can be fulfilled when members from both orgs signed.
-			'endorsement-policy': {
-			        identities: [
-					{ role: { name: 'member', mspId: 'Org1MSP' }},
-					{ role: { name: 'member', mspId: 'Org2MSP' }}
-			        ],
-			        policy: {
-					'2-of':[{ 'signed-by': 0 }, { 'signed-by': 1 }]
-			        }
-		        }
+			'endorsement-policy': endpolicy
 		};
 
 		if (functionName)

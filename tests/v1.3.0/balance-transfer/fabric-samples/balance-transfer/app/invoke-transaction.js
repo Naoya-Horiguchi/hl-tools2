@@ -37,6 +37,11 @@ var invokeChaincode = async function(peerNames, channelName, chaincodeName, fcn,
 		tx_id_string = tx_id.getTransactionID();
 
 		// send proposal to endorser
+		logger.debug('===> SEND_ONLY_PEER: ' + process.env.SEND_ONLY_PEER);
+		if (process.env.SEND_ONLY_PEER) {
+			peerNames = [process.env.SEND_ONLY_PEER];
+		}
+		logger.debug('===> targets: ' + peerNames);
 		var request = {
 			targets: peerNames,
 			chaincodeId: chaincodeName,

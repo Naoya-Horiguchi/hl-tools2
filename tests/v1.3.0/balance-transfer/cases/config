@@ -16,7 +16,7 @@ export FABRIC_SDK_NODE_DIR=${GOPATH}/src/github.com/hyperledger/fabric-sdk-node
 FABRIC_BUILD=false
 
 setup_private_keys() {
-    echo "updating network-config.yaml"
+	echo "updating network-config.yaml"
 
 	local ORG1_PRIVKEY="$(cd $FABRIC_NETWORK_DIR/ ; find crypto-config -type f | grep org1.example.com/users/Admin@org1.example.com/msp/keystore)"
 	local ORG2_PRIVKEY="$(cd $FABRIC_NETWORK_DIR/ ; find crypto-config -type f | grep org2.example.com/users/Admin@org2.example.com/msp/keystore)"
@@ -30,13 +30,21 @@ setup_private_keys() {
 TMPD=/tmp/ # $(mktemp -d)
 
 start_fabric_network() {
+	pushd $FABRIC_NETWORK_DIR
+	./runApp.sh
+	popd
+}
+
+stop_fabric_network() {
+	docker rm -f $(docker ps -qa)
+}
+
+start_application() {
 	local count=120
 
 	pushd $FABRIC_NETWORK_DIR
-	pkill -f "node app"
-	./runApp.sh | tee $TMPD/runApp.log &
+	PORT=4000 node app | tee $TMPD/runApp.log &
 	while ! grep '***** SERVER STARTED ******' $TMPD/runApp.log ; do
-		date
 		sleep 1
 		count=$[count - 1]
 		if [ "$count" -le 0 ] ; then
@@ -47,14 +55,6 @@ start_fabric_network() {
 	popd
 }
 
-stop_fabric_network() {
-	pkill -f "node app"
-}
-
-start_application() {
-	true
-}
-
 stop_application() {
-	true
+	pkill -f "node app"
 }
