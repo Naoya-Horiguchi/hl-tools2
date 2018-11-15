@@ -2,6 +2,7 @@
 load_testcase_config() {
 	local tcdir=$1
 	local tmp=
+	local dir=
 
 	for dir in $(echo $tcdir | tr '/' ' ') ; do
 		tmp="$tmp/$dir"
