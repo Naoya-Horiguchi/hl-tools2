@@ -1,0 +1,9 @@
+scenario() {
+	pushd $FABRIC_NETWORK_DIR
+	pwd
+	ls -ltr
+	echo '=============='
+	file ./testAPIs.sh
+	bash ./testAPIs.sh
+	popd	
+}
