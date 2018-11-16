@@ -68,30 +68,30 @@ channels:
         # Default: true
         eventSource: true
 
+        # [Optional]. will this peer be the target of Discovery requests.
+        # Default: true
+        discover: true
+
       peer1.org1.example.com:
         endorsingPeer: false
         chaincodeQuery: true
         ledgerQuery: true
         eventSource: false
+        discover: false
 
       peer0.org2.example.com:
         endorsingPeer: true
         chaincodeQuery: true
         ledgerQuery: true
         eventSource: true
+        discover: true
 
       peer1.org2.example.com:
         endorsingPeer: false
         chaincodeQuery: true
         ledgerQuery: true
         eventSource: false
-
-    # [Optional]. what chaincodes are expected to exist on this channel? The application can use
-    # this information to validate that the target peers are in the expected state by comparing
-    # this list with the query results of getInstalledChaincodes() and getInstantiatedChaincodes()
-    chaincodes:
-      # the format follows the "cannonical name" of chaincodes by fabric code
-      - mycc:v0
+        discover: false
 
 #
 # list of participating organizations in this network

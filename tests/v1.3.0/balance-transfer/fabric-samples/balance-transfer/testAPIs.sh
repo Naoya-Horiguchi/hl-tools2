@@ -183,6 +183,7 @@ curl -s -X POST \
 echo
 echo
 
+sleep 5
 echo "POST invoke chaincode on peers of Org1 and Org2"
 echo
 TRX_ID=$(curl -s -X POST \
@@ -190,7 +191,6 @@ TRX_ID=$(curl -s -X POST \
   -H "authorization: Bearer $ORG1_TOKEN" \
   -H "content-type: application/json" \
   -d '{
-	"peers": ["peer0.org1.example.com","peer0.org2.example.com"],
 	"fcn":"move",
 	"args":["a","b","10"]
 }')
