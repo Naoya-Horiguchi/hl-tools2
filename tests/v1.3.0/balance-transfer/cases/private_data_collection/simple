@@ -1,0 +1,82 @@
+export SERVICE_DISCOVERY=enabled
+
+start_application() {
+	true
+}
+
+stop_application() {
+	true
+}
+
+[ ! "$_CHANNEL_NAME" ] && _CHANNEL_NAME=mychannel
+[ ! "$_CC_NAME" ] && _CC_NAME=marblesp
+[ ! "$_CC_VERSION" ] && _CC_VERSION=v1
+[ ! "$_USER_NAME1" ] && _USER_NAME1=Jim
+[ ! "$_ORG_NAME1" ] && _ORG_NAME1=org1
+[ ! "$_USER_NAME2" ] && _USER_NAME2=Barry
+[ ! "$_ORG_NAME2" ] && _ORG_NAME2=org2
+
+[ ! "$_CC_SRC_PATH" ] && __CC_SRC_PATH=examples/chaincode/go/marbles02_private/go
+
+scenario() {
+	local PEER0_ORG1_CA=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
+	local PEER0_ORG2_CA=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
+	local ORDERER_CA=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
+	local DOCKER_PEER0_ORG1_OPT="-e CORE_PEER_ADDRESS=peer0.org1.example.com:7051 -e CORE_PEER_LOCALMSPID=Org1MSP -e PEER0_ORG1_CA=$PEER0_ORG1_CA -e CORE_PEER_TLS_ROOTCERT_FILE=$PEER0_ORG1_CA -e CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp"
+	local DOCKER_PEER1_ORG1_OPT="-e CORE_PEER_ADDRESS=peer1.org1.example.com:7051 -e CORE_PEER_LOCALMSPID=Org1MSP -e PEER0_ORG1_CA=$PEER0_ORG1_CA -e CORE_PEER_TLS_ROOTCERT_FILE=$PEER0_ORG1_CA -e CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp"
+	local DOCKER_PEER0_ORG2_OPT="-e CORE_PEER_ADDRESS=peer0.org2.example.com:7051 -e CORE_PEER_LOCALMSPID=Org2MSP -e PEER0_ORG2_CA=$PEER0_ORG2_CA -e CORE_PEER_TLS_ROOTCERT_FILE=$PEER0_ORG2_CA -e CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp"
+	local DOCKER_PEER1_ORG2_OPT="-e CORE_PEER_ADDRESS=peer1.org2.example.com:7051 -e CORE_PEER_LOCALMSPID=Org2MSP -e PEER0_ORG2_CA=$PEER0_ORG2_CA -e CORE_PEER_TLS_ROOTCERT_FILE=$PEER0_ORG2_CA -e CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp"
+
+	echo "--- Install chaincode on peer0.org1"
+	echo "docker exec cli peer chaincode install -n marblesp -v 1.0 -p github.com/chaincode/marbles02_private/go/"
+	docker exec cli peer chaincode install -n marblesp -v 1.0 -p github.com/chaincode/marbles02_private/go/
+
+	echo "--- Install chaincode on peer1.org1"
+	echo "docker exec -e CORE_PEER_ADDRESS=peer1.org1.example.com:7051 cli peer chaincode install -n marblesp -v 1.0 -p github.com/chaincode/marbles02_private/go/"
+	docker exec -e CORE_PEER_ADDRESS=peer1.org1.example.com:7051 cli \
+		   peer chaincode install -n marblesp -v 1.0 -p github.com/chaincode/marbles02_private/go/
+
+	echo "--- Install chaincode on peer0.org2"
+	docker exec $DOCKER_PEER0_ORG2_OPT cli \
+		   peer chaincode install -n marblesp -v 1.0 -p github.com/chaincode/marbles02_private/go/
+
+	echo "--- Install chaincode on peer1.org2"
+	docker exec $DOCKER_PEER1_ORG2_OPT cli \
+		   peer chaincode install -n marblesp -v 1.0 -p github.com/chaincode/marbles02_private/go/
+
+	echo "--- Instantiate"
+	docker exec -e ORDERER_CA=$ORDERER_CA cli \
+		   peer chaincode instantiate -o orderer.example.com:7050 --tls --cafile $ORDERER_CA -C mychannel -n marblesp -v 1.0 -c '{"Args":["init"]}' -P "OR('Org1MSP.member','Org2MSP.member')" --collections-config /opt/gopath/src/github.com/chaincode/marbles02_private/collections_config.json
+	sleep 10
+
+	docker exec $DOCKER_PEER0_ORG1_OPT cli \
+		   peer chaincode invoke -o orderer.example.com:7050 --tls --cafile $ORDERER_CA -C mychannel -n marblesp -c '{"Args":["initMarble","marble1","blue","35","tom","99"]}'
+	docker exec $DOCKER_PEER0_ORG1_OPT cli \
+		   peer chaincode query -C mychannel -n marblesp -c '{"Args":["readMarble","marble1"]}'
+	docker exec $DOCKER_PEER0_ORG1_OPT cli \
+		   peer chaincode query -C mychannel -n marblesp -c '{"Args":["readMarblePrivateDetails","marble1"]}'
+
+	docker exec $DOCKER_PEER0_ORG2_OPT cli \
+		   peer chaincode query -C mychannel -n marblesp -c '{"Args":["readMarble","marble1"]}'
+	docker exec $DOCKER_PEER0_ORG2_OPT cli \
+		   peer chaincode query -C mychannel -n marblesp -c '{"Args":["readMarblePrivateDetails","marble1"]}'
+
+	docker logs peer0.org1.example.com 2>&1 | grep -i -a -E 'private|pvt|privdata'
+
+	docker exec $DOCKER_PEER0_ORG1_OPT cli \
+		   peer chaincode query -C mychannel -n marblesp -c '{"Args":["readMarblePrivateDetails","marble1"]}'
+	docker exec $DOCKER_PEER0_ORG1_OPT cli \
+		   peer chaincode invoke -o orderer.example.com:7050 --tls --cafile $ORDERER_CA -C mychannel -n marblesp -c '{"Args":["initMarble","marble2","blue","35","tom","99"]}'
+	docker exec $DOCKER_PEER0_ORG1_OPT cli \
+		   peer chaincode query -C mychannel -n marblesp -c '{"Args":["readMarblePrivateDetails","marble1"]}'
+
+	docker logs peer0.org1.example.com 2>&1 | grep -i -a -E 'private|pvt|privdata'
+
+	docker exec $DOCKER_PEER0_ORG1_OPT cli \
+		   peer chaincode invoke -o orderer.example.com:7050 --tls --cafile $ORDERER_CA -C mychannel -n marblesp -c '{"Args":["transferMarble","marble2","joe"]}'
+
+	docker logs peer0.org1.example.com 2>&1 | grep -i -a -E 'private|pvt|privdata'
+
+	docker exec $DOCKER_PEER0_ORG1_OPT cli \
+		   peer chaincode query -C mychannel -n marblesp -c '{"Args":["readMarblePrivateDetails","marble1"]}'
+}
