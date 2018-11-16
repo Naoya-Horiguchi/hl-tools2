@@ -27,7 +27,9 @@ run_scenario() {
 		sleep 2
 
 		for testcase in $testcases ; do
-			TESTCASE=${testcase} bash libs/run_single_testcase.sh
+			(
+				TESTCASE=${testcase} bash libs/run_single_testcase.sh
+			)
 		done
 
 		collect_fabric_network_logs $dir
