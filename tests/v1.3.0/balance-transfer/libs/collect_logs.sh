@@ -23,6 +23,18 @@ collect_fabric_network_logs() {
 	done
 }
 
+collect_application_process_logs() {
+	local label=${1##cases}
+	label=${label##/}
+	local file=$2
+
+	mkdir -p $LOGDIR/$label
+	cp $file $LOGDIR/$label/app_proc.log
+
+	# filtering
+	sed -e "s/\(,[0-9]\+\)\{10,1000\}/...<filtered>.../g" $TMPD/stdout > $LOGDIR/$label/stdout
+}
+
 decide_result() {
 	local resdir=$1
 	local result=$2

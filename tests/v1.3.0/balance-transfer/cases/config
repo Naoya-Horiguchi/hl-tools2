@@ -15,7 +15,7 @@ export FABRIC_SDK_NODE_DIR=${GOPATH}/src/github.com/hyperledger/fabric-sdk-node
 # use official images
 FABRIC_BUILD=false
 
-TMPD=/tmp/ # $(mktemp -d)
+TMPD=$(mktemp -d)
 
 start_fabric_network() {
 	pushd $FABRIC_NETWORK_DIR
