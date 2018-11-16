@@ -1,0 +1,28 @@
+export SERVICE_DISCOVERY=enabled
+
+start_application() {
+	local count=120
+
+	pushd $FABRIC_NETWORK_DIR
+	PORT=4000 node app | tee $TMPD/runApp.log &
+	while ! grep '***** SERVER STARTED ******' $TMPD/runApp.log ; do
+		sleep 1
+		count=$[count - 1]
+		if [ "$count" -le 0 ] ; then
+			echo "runApp.sh seems to fail, abort"
+			exit 1
+		fi
+	done
+	popd
+}
+
+stop_application() {
+	pkill -f "node app"
+	collect_application_process_logs $TESTCASE $TMPD/runApp.log
+}
+
+scenario() {
+	pushd $FABRIC_NETWORK_DIR
+	bash ./testAPIs.sh
+	popd
+}
