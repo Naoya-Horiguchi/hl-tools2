@@ -13,16 +13,14 @@ pipeline {
 			steps {
 				withEnv(['PATH+EXTRA=/usr/local/go/bin']) {
 					sh '''
-						bash -c "PATH=$PATH bash /home/ubuntu/workspace/$JOB_NAME/scripts/setup_fabric_environment_ubuntu_1604.sh $JOB_NAME"
+						bash -c "PATH=$PATH bash /home/ubuntu/workspace/$JOB_NAME/jenkins/setup.env.u1604.sh $JOB_NAME"
 						newgrp docker
-						bash /home/ubuntu/workspace/$JOB_NAME/dev_app/scenarios/byfn/pull_fabric_images_from_ecr.sh v1.3.0
-						bash /home/ubuntu/workspace/$JOB_NAME/dev_app/scenarios/byfn/install_binaries.sh v1.3.0
-
-						cd /home/ubuntu/workspace/$JOB_NAME/dev_app/scenarios/byfn
+						cd /home/ubuntu/workspace/$JOB_NAME/tests/v1.3.0/balance-transfer
 						echo "Running Testcases"
 						echo "$(date): $(hostname)"
-						sudo make build_docker
-						sudo make run_all TESTCASES=cases/v1.3.0/byfn/solo/simple
+						sudo make prepare
+						sudo make run_all
+						bash -c "PATH=$PATH bash /home/ubuntu/workspace/$JOB_NAME/jenkins/save_output.sh $JOB_NAME n-horiguchi_role_for_ecr_user"
 						'''
 				}
 			}
