@@ -18,6 +18,7 @@ stop_application() {
 
 [ ! "$_CC_SRC_PATH" ] && __CC_SRC_PATH=examples/chaincode/go/marbles02_private/go
 
+# based on the tutorial scenario https://hyperledger-fabric.readthedocs.io/en/release-1.2/private_data_tutorial.html
 scenario() {
 	local PEER0_ORG1_CA=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
 	local PEER0_ORG2_CA=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
