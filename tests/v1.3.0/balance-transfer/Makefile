@@ -8,7 +8,7 @@ dummy:
 	@echo ""
 	@echo ""
 
-prepare: setup_environment cleanup_containers prepare_npm
+prepare: setup_environment cleanup_containers
 
 all: prepare run_all
 
@@ -17,10 +17,6 @@ setup_environment:
 
 cleanup_containers:
 	@docker ps -qa | xargs -r docker rm -f
-
-# If you update fabric-sdk-node, you would have to update node_modules/.
-prepare_npm:
-	bash libs/prepare_npm.sh
 
 # TESTCASE is used to limit the testcase to run if defined.
 run_all:
