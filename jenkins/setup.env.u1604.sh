@@ -12,9 +12,10 @@ fi
 sudo ln -sf /usr/bin/python3 /usr/bin/python
 
 # used in Jenkins build task
+sudo killall apt apt-get
 sudo rm -f /var/lib/dpkg/lock
 sudo apt-get -qq update
-sudo apt-get -qq install -y make jq gcc python3-pip apt-transport-https ca-certificates curl software-properties-common > /dev/null
+sudo apt-get -qq install -y make jq gcc g++ python3-pip apt-transport-https ca-certificates curl software-properties-common > /dev/null
 
 install_docker_ce() {
 	echo "installing docker-ce"
@@ -29,8 +30,24 @@ install_docker_ce() {
 	sudo systemctl restart docker
 }
 
+install_nodejs() {
+	# curl -sL https://deb.nodesource.com/setup_8.x | sudo bash -
+	sudo apt-get -qq install -y nodejs > /dev/null
+	sudo apt-get -qq install -y npm > /dev/null
+	echo "node version: $(node -v)"
+	echo "npm version: $(npm -v)"
+
+	sudo npm install -y -g n
+	sudo n v8.13.0
+	# sudo npm rebuild
+	sudo apt-get purge -y nodejs
+	sudo apt-get autoremove -y
+}
+
 # TODO: do this only when docker-ce is not installed yet
 install_docker_ce
+
+install_nodejs
 
 newgrp docker
 
