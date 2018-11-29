@@ -23,6 +23,8 @@ stop_application() {
 
 scenario() {
 	pushd $FABRIC_NETWORK_DIR
-	bash ./testAPIs.sh
+	echo "################# WARNING #################"
+	echo "Node.js Application in balance-transafer at Fabric v1.3 doesn't support service discovery, so skip this testcase at this point"
+	# bash ./testAPIs.sh
 	popd
 }
