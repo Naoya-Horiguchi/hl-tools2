@@ -19,7 +19,8 @@ TMPD=$(mktemp -d)
 
 start_fabric_network() {
 	pushd $FABRIC_NETWORK_DIR
-	./runApp.sh
+	# balance-transfer scripts start Fabric network and application in a single script.
+	echo "./runApp.sh"
 	popd
 }
 
