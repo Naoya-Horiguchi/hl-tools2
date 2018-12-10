@@ -39,7 +39,8 @@ install_nodejs() {
 
 	sudo npm install -y -g n
 	sudo n v8.13.0
-	# sudo npm rebuild
+  # TODO: need this
+	sudo npm rebuild
 	sudo apt-get purge -y nodejs
 	sudo apt-get autoremove -y
 }
