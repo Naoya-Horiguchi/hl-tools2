@@ -11,3 +11,5 @@ hooks:
     - location: scripts/codedeploy_beforeinstall.sh
   AfterInstall:
     - location: scripts/codedeploy_afterinstall.sh
+  ValidateService:
+    - location: scripts/codedeploy_validateservice.sh
