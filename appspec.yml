@@ -3,6 +3,7 @@ os: linux
 files:
   - source: /
     destination: /home/release 
+    overwrite: true
 hooks:
   ApplicationStart:
     - location: scripts/codedeploy_start.sh
