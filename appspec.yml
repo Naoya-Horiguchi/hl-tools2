@@ -13,3 +13,4 @@ hooks:
     - location: scripts/codedeploy_afterinstall.sh
   ValidateService:
     - location: scripts/codedeploy_validateservice.sh
+      timeout: 60
