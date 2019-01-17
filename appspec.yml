@@ -8,4 +8,6 @@ hooks:
     - location: scripts/codedeploy_start.sh
       timeout: 180
   BeforeInstall:
-    - location: scripts/codedeploy_beforestart.sh
+    - location: scripts/codedeploy_beforeinstall.sh
+  AfterInstall:
+    - location: scripts/codedeploy_afterinstall.sh

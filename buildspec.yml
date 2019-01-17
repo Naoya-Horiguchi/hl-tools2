@@ -1,9 +1,6 @@
 version: 0.1
 
 phases:
-  install:
-    commands:
-      - echo --------------- 1
   pre_build:
     commands:
       - echo --------------- 2
