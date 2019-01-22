@@ -3,7 +3,7 @@ ln -sf /usr/bin/python3 /usr/bin/python
 killall apt apt-get
 rm -f /var/lib/dpkg/lock
 apt-get -qq update
-apt-get -qq install -y make jq gcc g++ python3-pip apt-transport-https ca-certificates curl software-properties-common > /dev/null
+apt-get -qq install -y make jq gcc g++ python3-pip apt-transport-https ca-certificates curl software-properties-common default-jre > /dev/null
 
 install_docker_ce() {
     echo "installing docker-ce"
