@@ -1,5 +1,9 @@
 if [ ! "$JOB_NAME" ] ; then
-	JOB_NAME=$1
+	  JOB_NAME=$1
+fi
+
+if [ ! "$ROLE" ] ; then
+    ROLE=$2
 fi
 
 if [ ! "$JOB_NAME" ] ; then
@@ -7,8 +11,12 @@ if [ ! "$JOB_NAME" ] ; then
 	exit 1
 fi
 
-role=n-horiguchi_role_for_ecr_user
-curl -s http://169.254.169.254/latest/meta-data/iam/security-credentials/$role > /tmp/seccred
+if [ ! "$ROLE" ] ; then
+	echo "environment variable ROLE not given." >&2
+	exit 1
+fi
+
+curl -s http://169.254.169.254/latest/meta-data/iam/security-credentials/$ROLE > /tmp/seccred
 accessKeyId=$(jq -r '.AccessKeyId' /tmp/seccred)
 secretAccessKey=$(jq -r '.SecretAccessKey' /tmp/seccred)
 sessionToken=$(jq -r '.Token' /tmp/seccred)
