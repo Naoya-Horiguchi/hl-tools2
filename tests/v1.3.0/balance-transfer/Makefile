@@ -2,14 +2,13 @@ dummy:
 	@echo "Supported targets:"
 	@echo "    - setup_environment"
 	@echo "    - cleanup_container"
-	@echo "    - build_docker"
 	@echo "    - prepare_npm"
 	@echo "    - run_all: run all defined testcases"
 	@echo "    - run_single: run a given set of defined testcases"
 	@echo ""
 	@echo ""
 
-prepare: setup_environment cleanup_containers build_docker prepare_npm
+prepare: setup_environment cleanup_containers
 
 all: prepare run_all
 
@@ -18,14 +17,6 @@ setup_environment:
 
 cleanup_containers:
 	@docker ps -qa | xargs -r docker rm -f
-
-# If you update Node.js application, you would have to docker images.
-build_docker:
-	docker build -t hlf/app -f libs/Dockerfile.app .
-
-# If you update fabric-sdk-node, you would have to update node_modules/.
-prepare_npm:
-	bash libs/prepare_npm.sh
 
 # TESTCASE is used to limit the testcase to run if defined.
 run_all:
