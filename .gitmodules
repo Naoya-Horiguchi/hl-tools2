@@ -1,0 +1,3 @@
+[submodule "tests/v1.4.1/fabric-samples"]
+	path = tests/v1.4.1/fabric-samples
+	url = https://github.com/Naoya-Horiguchi/fabric-samples

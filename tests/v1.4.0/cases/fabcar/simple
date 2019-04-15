@@ -1,0 +1,40 @@
+export SERVICE_DISCOVERY=enabled
+
+start_application() {
+	local count=120
+
+	pushd $FABRIC_NETWORK_DIR/fabcar
+	./startFabric.sh javascript | tee $TMPD/runApp.log &
+	while ! grep 'Total setup execution time :' $TMPD/runApp.log ; do
+		sleep 1
+		count=$[count - 1]
+		if [ "$count" -le 0 ] ; then
+			echo "application seems to fail to start, abort"
+			exit 1
+		fi
+	done
+	popd
+}
+
+stop_application() {
+	collect_application_process_logs $TESTCASE $TMPD/runApp.log
+}
+
+scenario() {
+	pushd $FABRIC_NETWORK_DIR/fabcar/javascript
+
+	echo "----- npm install -----"
+  npm install || return 1
+	echo "----- enrollAdmin.js -----"
+  node enrollAdmin.js
+	echo "----- registerUser.js -----"
+  node registerUser.js
+	echo "----- query.js -----"
+  node query.js || return 1
+	echo "----- invoke.js -----"
+  node invoke.js || return 1
+	echo "----- query.js -----"
+  node query.js || return 1
+
+	popd
+}

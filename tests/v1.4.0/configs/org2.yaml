@@ -1,0 +1,13 @@
+name: "app-org2"
+x-type: "hlfv1"
+description: "HLF Testing Network - client definition for org2"
+
+version: "1.0"
+
+client:
+  organization: org2
+  credentialStore:
+    path: "./run/fabric-client-kv-org2"
+    cryptoStore:
+      path: "./run/fabric-client-kv-org2"
+    wallet: wallet-name

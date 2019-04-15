@@ -1,0 +1,25 @@
+LOGLEVEL=DEBUG # INFO # DEBUG
+CONFIG_JSON=configs/base.json
+
+FABRIC_NETWORK_NAME=balance-transfer
+FABRIC_NETWORK_DIR=$PWD/fabric-samples
+
+DOCKER_NETWORK=net_byfn
+ARTIFACTS_DIR=$PWD/examples
+
+export FABRIC_DIR=${GOPATH}/src/github.com/hyperledger/fabric
+export FABRIC_CA_DIR=${GOPATH}/src/github.com/hyperledger/fabric-ca
+export FABRIC_SDK_NODE_DIR=${GOPATH}/src/github.com/hyperledger/fabric-sdk-node
+
+# use official images
+FABRIC_BUILD=false
+
+TMPD=$(mktemp -d)
+
+start_fabric_network() {
+  true
+}
+
+stop_fabric_network() {
+	docker rm -f $(docker ps -qa)
+}
