@@ -94,16 +94,16 @@ scenario() {
            peer chaincode invoke -o orderer.example.com:7050 --tls --cafile $ORDERER_CA -C mychannel -n marblesp -c '{"Args":["initMarble"]}' --transient "{\"marble\":\"$MARBLE\"}"
     sleep 3
 
-    show_all_data_info
-
-    echo "--- disconnect peer1.org1.example.com from network $DOCKER_NETWORK ($(date))"
-    docker network disconnect $DOCKER_NETWORK peer1.org1.example.com
-
     echo "--- invoke 2 ($(date))"
     export MARBLE=$(echo -n "{\"name\":\"marble2\",\"color\":\"blue\",\"size\":35,\"owner\":\"tom\",\"price\":99}" | base64 | tr -d \\n)
     docker exec $DOCKER_PEER0_ORG1_OPT cli \
            peer chaincode invoke -o orderer.example.com:7050 --tls --cafile $ORDERER_CA -C mychannel -n marblesp -c '{"Args":["initMarble"]}' --transient "{\"marble\":\"$MARBLE\"}"
     sleep 3
+
+    show_all_data_info
+    echo "--- disconnect peer1.org1.example.com from network $DOCKER_NETWORK ($(date))"
+    docker network disconnect $DOCKER_NETWORK peer1.org1.example.com
+
     echo "--- invoke 3 ($(date))"
     export MARBLE_OWNER=$(echo -n "{\"name\":\"marble2\",\"owner\":\"joe\"}" | base64 | tr -d \\n)
     docker exec $DOCKER_PEER0_ORG1_OPT cli \
