@@ -18,7 +18,6 @@ stop_application() {
 
 [ ! "$_CC_SRC_PATH" ] && __CC_SRC_PATH=examples/chaincode/go/marbles02_private/go
 
-# based on the tutorial scenario https://hyperledger-fabric.readthedocs.io/en/release-1.2/private_data_tutorial.html
 scenario() {
     local PEER0_ORG1_CA=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
     local PEER0_ORG2_CA=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
@@ -31,6 +30,8 @@ scenario() {
     # changing loglevel
     echo "--- change loglevels"
     docker exec $DOCKER_PEER0_ORG1_OPT cli \
+           wget --method=PUT --header="Content-Type: application/json" --body-data="{\"spec\":\"debug\"}" http://orderer.example.com:8443/logspec
+    docker exec $DOCKER_PEER0_ORG1_OPT cli \
            wget --method=PUT --header="Content-Type: application/json" --body-data="{\"spec\":\"debug\"}" http://peer0.org1.example.com:9443/logspec
     docker exec $DOCKER_PEER1_ORG1_OPT cli \
            wget --method=PUT --header="Content-Type: application/json" --body-data="{\"spec\":\"debug\"}" http://peer1.org1.example.com:9443/logspec
@@ -39,6 +40,44 @@ scenario() {
     docker exec $DOCKER_PEER1_ORG2_OPT cli \
            wget --method=PUT --header="Content-Type: application/json" --body-data="{\"spec\":\"debug\"}" http://peer1.org2.example.com:9443/logspec
            # wget --header="Content-Type: application/json" --post-data="{\"spec\":\"chaincode=debug:info\"}" http://peer0.org1.example.com:9443/logspec
+
+
+    echo "--- disconnect peer1.org1.example.com from network $DOCKER_NETWORK ($(date))"
+    docker network disconnect $DOCKER_NETWORK peer1.org1.example.com
+
+    # send transaction to mycc
+    echo "--- send transaction to mycc ($(date))"
+    docker exec $DOCKER_PEER0_ORG2_OPT cli \
+           peer chaincode invoke -o orderer.example.com:7050 --tls --cafile $ORDERER_CA -C mychannel -n mycc -c '{"Args":["invoke","a","b","3"]}'
+    docker exec $DOCKER_PEER0_ORG2_OPT cli \
+           peer chaincode invoke -o orderer.example.com:7050 --tls --cafile $ORDERER_CA -C mychannel -n mycc -c '{"Args":["invoke","a","b","7"]}'
+    docker exec $DOCKER_PEER0_ORG2_OPT cli \
+           peer chaincode invoke -o orderer.example.com:7050 --tls --cafile $ORDERER_CA -C mychannel -n mycc -c '{"Args":["invoke","a","b","9"]}'
+    sleep 3
+    docker logs peer0.org1.example.com 2>&1 | grep -v DEBU | tail
+
+    echo "--- reconnect peer1.org1.example.com from network $DOCKER_NETWORK ($(date))"
+    docker network connect $DOCKER_NETWORK peer1.org1.example.com
+    sleep 5
+    echo "-- docker logs peer0.org1 ($(date))"
+    docker logs peer0.org1.example.com 2>&1 | grep -v DEBU | tail
+    echo "-- docker logs peer1.org1"
+    docker logs peer1.org1.example.com 2>&1 | grep -v DEBU | tail
+
+    # reset loglevel
+    echo "--- switch off debug log"
+    docker exec $DOCKER_PEER0_ORG1_OPT cli \
+           wget --method=PUT --header="Content-Type: application/json" --body-data="{\"spec\":\"info\"}" http://orderer.example.com:8443/logspec
+    docker exec $DOCKER_PEER0_ORG1_OPT cli \
+           wget --method=PUT --header="Content-Type: application/json" --body-data="{\"spec\":\"info\"}" http://peer0.org1.example.com:9443/logspec
+    docker exec $DOCKER_PEER1_ORG1_OPT cli \
+           wget --method=PUT --header="Content-Type: application/json" --body-data="{\"spec\":\"info\"}" http://peer1.org1.example.com:9443/logspec
+    docker exec $DOCKER_PEER0_ORG2_OPT cli \
+           wget --method=PUT --header="Content-Type: application/json" --body-data="{\"spec\":\"info\"}" http://peer0.org2.example.com:9443/logspec
+    docker exec $DOCKER_PEER1_ORG2_OPT cli \
+           wget --method=PUT --header="Content-Type: application/json" --body-data="{\"spec\":\"info\"}" http://peer1.org2.example.com:9443/logspec
+
+    return
 
     echo "--- Install chaincode on peer0.org1"
     # echo "docker exec cli peer chaincode install -n marblesp -v 1.0 -p github.com/chaincode/marbles02_private/go/"

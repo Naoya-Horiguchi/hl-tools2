@@ -18,7 +18,29 @@ stop_application() {
 
 [ ! "$_CC_SRC_PATH" ] && __CC_SRC_PATH=examples/chaincode/go/marbles02_private/go
 
-# based on the tutorial scenario https://hyperledger-fabric.readthedocs.io/en/release-1.2/private_data_tutorial.html
+show_data() {
+    local org=$1
+    local peer=$2
+    shift 2
+    local opt="$@"
+
+    echo "--- query from peer${peer}.org${org} ($(date))"
+    # echo "options: $opt"
+    echo "block height on peer${peer}.org${org}:"
+    docker exec $opt cli wget -q -O - http://peer${peer}.org${org}.example.com:9443/metrics | grep -e ^gossip_state_height -e ^ledger_blockchain_height
+    docker exec $opt cli peer chaincode query -C mychannel -n marblesp -c '{"Args":["readMarble","marble1"]}'
+    docker exec $opt cli peer chaincode query -C mychannel -n marblesp -c '{"Args":["readMarblePrivateDetails","marble1"]}'
+    docker exec $opt cli peer chaincode query -C mychannel -n marblesp -c '{"Args":["readMarble","marble2"]}'
+    docker exec $opt cli peer chaincode query -C mychannel -n marblesp -c '{"Args":["readMarblePrivateDetails","marble2"]}'
+}
+
+show_all_data_info() {
+    show_data 1 0 "$DOCKER_PEER0_ORG1_OPT"
+    show_data 1 1 "$DOCKER_PEER1_ORG1_OPT"
+    show_data 2 0 "$DOCKER_PEER0_ORG2_OPT"
+    show_data 2 1 "$DOCKER_PEER1_ORG2_OPT"
+}
+
 scenario() {
     local PEER0_ORG1_CA=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
     local PEER0_ORG2_CA=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
@@ -31,6 +53,8 @@ scenario() {
     # changing loglevel
     echo "--- change loglevels"
     docker exec $DOCKER_PEER0_ORG1_OPT cli \
+           wget --method=PUT --header="Content-Type: application/json" --body-data="{\"spec\":\"debug\"}" http://orderer.example.com:8443/logspec
+    docker exec $DOCKER_PEER0_ORG1_OPT cli \
            wget --method=PUT --header="Content-Type: application/json" --body-data="{\"spec\":\"debug\"}" http://peer0.org1.example.com:9443/logspec
     docker exec $DOCKER_PEER1_ORG1_OPT cli \
            wget --method=PUT --header="Content-Type: application/json" --body-data="{\"spec\":\"debug\"}" http://peer1.org1.example.com:9443/logspec
@@ -42,8 +66,7 @@ scenario() {
 
     echo "--- Install chaincode on peer0.org1"
     # echo "docker exec cli peer chaincode install -n marblesp -v 1.0 -p github.com/chaincode/marbles02_private/go/"
-    docker exec $DOCKER_PEER0_ORG1_OPT cli \
-           peer chaincode install -n marblesp -v 1.0 -p github.com/chaincode/marbles02_private/go/
+    docker exec $DOCKER_PEER0_ORG1_OPT cli peer chaincode install -n marblesp -v 1.0 -p github.com/chaincode/marbles02_private/go/
 
     echo "--- Install chaincode on peer1.org1"
     # echo "docker exec -e CORE_PEER_ADDRESS=peer1.org1.example.com:7051 cli peer chaincode install -n marblesp -v 1.0 -p github.com/chaincode/marbles02_private/go/"
@@ -63,65 +86,61 @@ scenario() {
            peer chaincode instantiate -o orderer.example.com:7050 --tls --cafile $ORDERER_CA -C mychannel -n marblesp -v 1.0 -c '{"Args":["init"]}' -P "OR('Org1MSP.member','Org2MSP.member')" --collections-config /opt/gopath/src/github.com/chaincode/marbles02_private/collections_config.json
     sleep 10
 
+    # send transaction to mycc
+    echo "--- send transaction to marblesp ($(date))"
     echo "--- invoke 1 ($(date))"
     export MARBLE=$(echo -n "{\"name\":\"marble1\",\"color\":\"blue\",\"size\":35,\"owner\":\"tom\",\"price\":99}" | base64 | tr -d \\n)
     docker exec $DOCKER_PEER0_ORG1_OPT cli \
            peer chaincode invoke -o orderer.example.com:7050 --tls --cafile $ORDERER_CA -C mychannel -n marblesp -c '{"Args":["initMarble"]}' --transient "{\"marble\":\"$MARBLE\"}"
     sleep 3
 
-    echo "--- query from peer0.org1 ($(date))"
-    docker exec $DOCKER_PEER0_ORG1_OPT cli \
-           peer chaincode query -C mychannel -n marblesp -c '{"Args":["readMarble","marble1"]}'
-    docker exec $DOCKER_PEER0_ORG1_OPT cli \
-           peer chaincode query -C mychannel -n marblesp -c '{"Args":["readMarblePrivateDetails","marble1"]}'
-    docker logs peer0.org1.example.com 2>&1 | grep -v DEBU | grep -i -a -E 'private|pvt|privdata' | tail
+    show_all_data_info
 
-    echo "--- query from peer0.org2 ($(date))"
-    docker exec $DOCKER_PEER0_ORG2_OPT cli \
-           peer chaincode query -C mychannel -n marblesp -c '{"Args":["readMarble","marble1"]}'
-    docker exec $DOCKER_PEER0_ORG2_OPT cli \
-           peer chaincode query -C mychannel -n marblesp -c '{"Args":["readMarblePrivateDetails","marble1"]}'
-    docker logs peer0.org2.example.com 2>&1 | grep -v DEBU | grep -i -a -E 'private|pvt|privdata' | tail
+    echo "--- disconnect peer1.org1.example.com from network $DOCKER_NETWORK ($(date))"
+    docker network disconnect $DOCKER_NETWORK peer1.org1.example.com
 
     echo "--- invoke 2 ($(date))"
     export MARBLE=$(echo -n "{\"name\":\"marble2\",\"color\":\"blue\",\"size\":35,\"owner\":\"tom\",\"price\":99}" | base64 | tr -d \\n)
     docker exec $DOCKER_PEER0_ORG1_OPT cli \
            peer chaincode invoke -o orderer.example.com:7050 --tls --cafile $ORDERER_CA -C mychannel -n marblesp -c '{"Args":["initMarble"]}' --transient "{\"marble\":\"$MARBLE\"}"
     sleep 3
-    echo "--- query from peer0.org1 ($(date)), to check that marble1 is not purged yet."
-    docker exec $DOCKER_PEER0_ORG1_OPT cli \
-           peer chaincode query -C mychannel -n marblesp -c '{"Args":["readMarblePrivateDetails","marble1"]}'
-
     echo "--- invoke 3 ($(date))"
     export MARBLE_OWNER=$(echo -n "{\"name\":\"marble2\",\"owner\":\"joe\"}" | base64 | tr -d \\n)
     docker exec $DOCKER_PEER0_ORG1_OPT cli \
            peer chaincode invoke -o orderer.example.com:7050 --tls --cafile $ORDERER_CA -C mychannel -n marblesp -c '{"Args":["transferMarble"]}' --transient "{\"marble_owner\":\"$MARBLE_OWNER\"}"
     sleep 3
-    docker logs peer0.org1.example.com 2>&1 | grep -v DEBU | grep -i -a -E 'private|pvt|privdata' | tail
-
-    echo "--- query from peer0.org1 ($(date)), to check that marble1 is not purged yet."
-    docker exec $DOCKER_PEER0_ORG1_OPT cli \
-           peer chaincode query -C mychannel -n marblesp -c '{"Args":["readMarblePrivateDetails","marble1"]}'
-
     echo "--- invoke 4 ($(date))"
     export MARBLE_OWNER=$(echo -n "{\"name\":\"marble2\",\"owner\":\"tom\"}" | base64 | tr -d \\n)
     docker exec $DOCKER_PEER0_ORG1_OPT cli \
            peer chaincode invoke -o orderer.example.com:7050 --tls --cafile $ORDERER_CA -C mychannel -n marblesp -c '{"Args":["transferMarble"]}' --transient "{\"marble_owner\":\"$MARBLE_OWNER\"}"
     sleep 3
-    docker logs peer0.org1.example.com 2>&1 | grep -v DEBU | grep -i -a -E 'private|pvt|privdata' | tail
-
     echo "--- invoke 5 ($(date))"
     export MARBLE_OWNER=$(echo -n "{\"name\":\"marble2\",\"owner\":\"jerry\"}" | base64 | tr -d \\n)
     docker exec $DOCKER_PEER0_ORG1_OPT cli \
            peer chaincode invoke -o orderer.example.com:7050 --tls --cafile $ORDERER_CA -C mychannel -n marblesp -c '{"Args":["transferMarble"]}' --transient "{\"marble_owner\":\"$MARBLE_OWNER\"}"
-    sleep 1
+    sleep 3
+    echo "--- reconnect peer1.org1.example.com from network $DOCKER_NETWORK ($(date))"
+    docker network connect $DOCKER_NETWORK peer1.org1.example.com
+    sleep 5
 
-    echo "--- query from peer0.org1 ($(date)), to check that marble1 *is* purged."
-    docker exec $DOCKER_PEER0_ORG1_OPT cli \
-           peer chaincode query -C mychannel -n marblesp -c '{"Args":["readMarblePrivateDetails","marble1"]}'
+    show_all_data_info
 
-    # changing loglevel
+    echo "--- additional invoke 6 ($(date))"
+    # この時点で peer1.org1 は marble2 の readMarblePrivateDetails に対して
+    # private data がないため query に失敗する。
+    # Error: endorsement failure during query. response: status:500 message:"{\"Error\":\"Failed to get private details for marble2: GET_STATE failed: transaction ID: d4f1684c8b07e277e90b5c2a0942d28ec49de9789f71551ca1310033d24782bc: private data matching public hash version is not available. Public hash version = {BlockNum: 7, TxNum: 0}, Private data version = <nil>\"}"
+    # その peer 上で invoke を実施することで private data が補完されないか確認する目的。
+    export MARBLE_OWNER=$(echo -n "{\"name\":\"marble2\",\"owner\":\"peter\"}" | base64 | tr -d \\n)
+    docker exec $DOCKER_PEER1_ORG1_OPT cli \
+           peer chaincode invoke -o orderer.example.com:7050 --tls --cafile $ORDERER_CA -C mychannel -n marblesp -c '{"Args":["transferMarble"]}' --transient "{\"marble_owner\":\"$MARBLE_OWNER\"}"
+    sleep 3
+
+    show_all_data_info
+
+    # reset loglevel
     echo "--- switch off debug log"
+    docker exec $DOCKER_PEER0_ORG1_OPT cli \
+           wget --method=PUT --header="Content-Type: application/json" --body-data="{\"spec\":\"info\"}" http://orderer.example.com:8443/logspec
     docker exec $DOCKER_PEER0_ORG1_OPT cli \
            wget --method=PUT --header="Content-Type: application/json" --body-data="{\"spec\":\"info\"}" http://peer0.org1.example.com:9443/logspec
     docker exec $DOCKER_PEER1_ORG1_OPT cli \
@@ -130,5 +149,4 @@ scenario() {
            wget --method=PUT --header="Content-Type: application/json" --body-data="{\"spec\":\"info\"}" http://peer0.org2.example.com:9443/logspec
     docker exec $DOCKER_PEER1_ORG2_OPT cli \
            wget --method=PUT --header="Content-Type: application/json" --body-data="{\"spec\":\"info\"}" http://peer1.org2.example.com:9443/logspec
-           # wget --header="Content-Type: application/json" --post-data="{\"spec\":\"chaincode=debug:info\"}" http://peer0.org1.example.com:9443/logspec
 }
